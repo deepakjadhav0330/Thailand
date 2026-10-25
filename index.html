@@ -5,112 +5,158 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ThaiTrip Split</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#101820;color:#f4f6f8;font-family:Arial,sans-serif;padding:20px;max-width:600px;margin:auto}
-h1{margin-bottom:4px;font-size:29px}
-.sub{color:#aebbc7;margin-top:0}
+body{margin:auto;padding:20px;max-width:600px;background:#101820;color:#f4f6f8;font-family:Arial,sans-serif}
+h1{font-size:29px}
+.sub,.small{color:#aebbc7}
 .card{background:#1c2935;padding:17px;border-radius:16px;margin:16px 0}
-label{display:block;margin:12px 0 6px;color:#c6d2dc;font-size:14px}
+label{display:block;margin:12px 0 6px}
 input,select,button{width:100%;padding:13px;border-radius:10px;border:1px solid #435260;background:#101820;color:white;font-size:16px}
-button{background:#20c997;color:#08251d;font-weight:bold;border:0;margin-top:14px}
-.stat{font-size:25px;font-weight:bold;margin-top:7px}
-.small{color:#aebbc7;font-size:13px}
-.item{padding:12px 0;border-bottom:1px solid #435260}
-.item:last-child{border-bottom:0}
+button{background:#20c997;color:#08251d;font-weight:bold;border:0;margin-top:12px}
+button:disabled{opacity:.5}
+.stat{font-size:26px;font-weight:bold;margin:8px 0}
+.item{padding:12px 0;border-bottom:1px solid #435260;overflow-wrap:anywhere}
 .amount{color:#64e6b1;font-weight:bold}
+.delete{background:#9d3434;color:white;width:auto;padding:8px 12px;float:right;margin:0 0 0 8px}
+#status{font-size:14px;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
 <h1>🇹🇭 ThaiTrip Split</h1>
-<p class="sub">Three friends. One trip. Fair expenses.</p>
+<p class="sub">DJ · Ayesha · Pratik</p>
 
 <div class="card">
-<div class="small">TOTAL TRIP EXPENSES</div>
+<div class="small">TOTAL SHARED EXPENSES</div>
 <div class="stat" id="total">฿0</div>
-<p class="small">Thai Baht · <span id="inr">₹0</span> estimated</p>
-<label>THB to INR rate</label>
-<input id="rate" type="number" value="2.5" step="0.01" min="0.01">
+<div id="inr" class="small">₹0 estimated</div>
+<label>THB to INR exchange rate</label>
+<input id="rate" type="number" value="2.5" min="0.01" step="0.01">
+<p id="status">Connecting to shared database…</p>
 </div>
 
 <div class="card">
-<h3>Add an expense</h3>
-<label>Expense description</label>
-<input id="desc" placeholder="e.g. Dinner, Grab, Hotel">
-<label>Amount (฿)</label>
-<input id="amount" type="number" min="1" placeholder="e.g. 1200">
+<h3>Add expense</h3>
+<label>Description</label>
+<input id="desc" placeholder="Dinner, taxi, hotel…">
+<label>Amount (THB ฿)</label>
+<input id="amount" type="number" min="0.01" step="0.01" placeholder="1200">
 <label>Paid by</label>
-<select id="payer"></select>
+<select id="payer">
+<option>DJ</option><option>Ayesha</option><option>Pratik</option>
+</select>
 <label>Split between</label>
-<div id="split"></div>
-<button onclick="addExpense()">＋ Add expense</button>
+<label><input class="person" type="checkbox" value="DJ" checked style="width:auto"> DJ</label>
+<label><input class="person" type="checkbox" value="Ayesha" checked style="width:auto"> Ayesha</label>
+<label><input class="person" type="checkbox" value="Pratik" checked style="width:auto"> Pratik</label>
+<button id="add" onclick="addExpense()">＋ Add shared expense</button>
 </div>
 
 <div class="card">
-<h3>Expense history</h3>
-<div id="expenses"><p class="small">No expenses yet. Add your first one!</p></div>
+<h3>Shared expense history</h3>
+<div id="expenses">Loading…</div>
 </div>
 
 <div class="card">
 <h3>Settlement</h3>
-<p class="small">Positive means they should receive money; negative means they owe money.</p>
+<div class="small">Positive balance means they should receive money; negative means they owe money.</div>
 <div id="balances"></div>
 <div id="settlement"></div>
 </div>
 
 <script>
-const friends=["DJ","Ayesha","Pratik"];
-let expenses=[];
-try{expenses=JSON.parse(localStorage.getItem("thaiTripExpenses")||"[]")}catch(e){expenses=[]}
-const payer=document.getElementById("payer");
-const split=document.getElementById("split");
-friends.forEach((name,i)=>{
- let option=document.createElement("option");
- option.value=i;option.textContent=name;payer.appendChild(option);
- split.insertAdjacentHTML("beforeend",
- `<label><input type="checkbox" id="s${i}" checked style="width:auto;margin-right:8px"> ${name}</label>`);
-});
-function money(n){return "฿"+n.toLocaleString("en-US",{maximumFractionDigits:2})}
-function render(){
- const total=expenses.reduce((s,e)=>s+e.amount,0);
- document.getElementById("total").textContent=money(total);
- document.getElementById("inr").textContent="₹"+Math.round(total*(Number(document.getElementById("rate").value)||0)).toLocaleString("en-IN");
- document.getElementById("expenses").innerHTML=expenses.length?expenses.slice().reverse().map(e=>
- `<div class="item"><strong>${escapeText(e.desc)}</strong><div class="small">${friends[e.payer]} paid · split ${e.split.map(i=>friends[i]).join(", ")}</div><div class="amount">${money(e.amount)}</div></div>`
- ).join(""):'<p class="small">No expenses yet. Add your first one!</p>';
- let bal=[0,0,0];
- expenses.forEach(e=>{
-  bal[e.payer]+=e.amount;
-  e.split.forEach(i=>bal[i]-=e.amount/e.split.length);
- });
- document.getElementById("balances").innerHTML=bal.map((b,i)=>
- `<div class="item">${friends[i]} <strong style="float:right;color:${b>=0?'#64e6b1':'#ff9b9b'}">${b>=0?'+':'−'}${money(Math.abs(b))}</strong></div>`
- ).join("");
- let creditors=bal.map((v,i)=>({i,v})).filter(x=>x.v>0.01);
- let debtors=bal.map((v,i)=>({i,v:-xSafe(v)})).filter(x=>x.v>0.01);
- let transfers=[];
- creditors.forEach(c=>debtors.forEach(d=>{
-  let n=Math.min(c.v,d.v);
-  if(n>0.01){transfers.push(`${friends[d.i]} pays ${friends[c.i]} ${money(n)}`);c.v-=n;d.v-=n;}
- }));
- document.getElementById("settlement").innerHTML=transfers.length?transfers.map(t=>`<div class="item">${t}</div>`).join(""):'<p class="small">Everyone is settled up!</p>';
-}
-function xSafe(v){return v}
-function escapeText(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function addExpense(){
- const desc=document.getElementById("desc").value.trim();
- const amount=Number(document.getElementById("amount").value);
- const selected=friends.map((_,i)=>i).filter(i=>document.getElementById("s"+i).checked);
- if(!desc||!Number.isFinite(amount)||amount<=0){alert("Enter a description and a valid amount.");return}
- if(!selected.length){alert("Select at least one person to split the expense.");return}
- expenses.push({desc,amount,payer:Number(payer.value),split:selected});
- localStorage.setItem("thaiTripExpenses",JSON.stringify(expenses));
- document.getElementById("desc").value="";
- document.getElementById("amount").value="";
+const PROJECT_URL = "https://dfawemtboacvbsugbytw.supabase.co";
+const PUBLISHABLE_KEY = "PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE";
+const db = window.supabase.createClient(PROJECT_URL, PUBLISHABLE_KEY);
+const friends = ["DJ","Ayesha","Pratik"];
+let expenses = [];
+let busy = false;
+
+const el = id => document.getElementById(id);
+const safe = s => String(s).replace(/[&<>"']/g,c=>({
+"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[c]));
+const money = n => "฿"+n.toLocaleString("en-US",{maximumFractionDigits:2});
+
+function setStatus(message){el("status").textContent=message}
+
+async function loadExpenses(){
+ const {data,error}=await db.from("expenses").select("*").order("created_at",{ascending:false});
+ if(error){setStatus("Database error: "+error.message);return}
+ expenses=data||[];
+ setStatus("Connected · shared expenses loaded");
  render();
 }
-document.getElementById("rate").addEventListener("input",render);
-render();
+
+function render(){
+ const total=expenses.reduce((s,e)=>s+Number(e.amount),0);
+ el("total").textContent=money(total);
+ el("inr").textContent="₹"+Math.round(total*(Number(el("rate").value)||0)).toLocaleString("en-IN")+" estimated";
+ el("expenses").innerHTML=expenses.length?expenses.map(e=>
+ `<div class="item">
+ <button class="delete" onclick="deleteExpense(${Number(e.id)})">Delete</button>
+ <strong>${safe(e.description)}</strong>
+ <div class="small">${safe(e.paid_by)} paid · split ${Array.isArray(e.split_between)?e.split_between.map(safe).join(", "):""}</div>
+ <div class="amount">${money(Number(e.amount))}</div>
+ </div>`).join(""):'<p class="small">No shared expenses yet.</p>';
+
+ const bal={DJ:0,Ayesha:0,Pratik:0};
+ expenses.forEach(e=>{
+  const amount=Number(e.amount);
+  const people=Array.isArray(e.split_between)?e.split_between:[];
+  if(!people.length)return;
+  bal[e.paid_by]+=amount;
+  people.forEach(p=>{if(p in bal)bal[p]-=amount/people.length});
+ });
+ el("balances").innerHTML=friends.map(p=>
+ `<div class="item">${p}<strong style="float:right;color:${bal[p]>=0?'#64e6b1':'#ff9b9b'}">${bal[p]>=0?'+':'−'}${money(Math.abs(bal[p]))}</strong></div>`
+ ).join("");
+
+ let creditors=friends.map(p=>({name:p,amount:bal[p]})).filter(x=>x.amount>0.01);
+ let debtors=friends.map(p=>({name:p,amount:-bal[p]})).filter(x=>x.amount>0.01);
+ let transfers=[];
+ for(const d of debtors){
+  for(const c of creditors){
+   const n=Math.min(d.amount,c.amount);
+   if(n>0.01){
+    transfers.push(`${d.name} pays ${c.name} ${money(n)}`);
+    d.amount-=n;c.amount-=n;
+   }
+  }
+ }
+ el("settlement").innerHTML=transfers.length?transfers.map(t=>`<div class="item">${safe(t)}</div>`).join(""):'<p class="small">Everyone is settled up!</p>';
+}
+
+async function addExpense(){
+ if(busy)return;
+ const description=el("desc").value.trim();
+ const amount=Number(el("amount").value);
+ const paid_by=el("payer").value;
+ const split_between=[...document.querySelectorAll(".person:checked")].map(x=>x.value);
+ if(!description||!Number.isFinite(amount)||amount<=0||!split_between.length){
+  alert("Enter a description, a valid amount, and at least one person to split with.");return;
+ }
+ busy=true;el("add").disabled=true;
+ const {error}=await db.from("expenses").insert([{description,amount,paid_by,split_between}]);
+ busy=false;el("add").disabled=false;
+ if(error){setStatus("Could not save: "+error.message);return}
+ el("desc").value="";el("amount").value="";
+ await loadExpenses();
+}
+
+async function deleteExpense(id){
+ if(!confirm("Delete this shared expense for everyone?"))return;
+ const {error}=await db.from("expenses").delete().eq("id",id);
+ if(error){setStatus("Could not delete: "+error.message);return}
+ await loadExpenses();
+}
+
+el("rate").addEventListener("input",render);
+db.channel("shared-expenses")
+ .on("postgres_changes",{event:"*",schema:"public",table:"expenses"},loadExpenses)
+ .subscribe();
+loadExpenses();
 </script>
 </body>
 </html>
