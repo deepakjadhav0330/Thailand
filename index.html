@@ -34,6 +34,18 @@ button:disabled{opacity:.5}
 <label>THB to INR exchange rate</label>
 <input id="rate" type="number" value="2.81" min="0.01" step="0.01">
 <p id="status">Connecting to shared database…</p>
+
+<div class="card" id="adminCard">
+  <h3>DJ admin login</h3>
+  <label>Email</label>
+  <input id="adminEmail" type="email" placeholder="DJ account email">
+  <label>Password</label>
+  <input id="adminPassword" type="password" placeholder="DJ password">
+  <button onclick="signInDJ()">Sign in as DJ</button>
+  <button onclick="signOutDJ()" id="signOutButton" style="display:none">Sign out</button>
+  <p id="authStatus" class="small"></p>
+</div>
+
 </div>
 
 <div class="card">
@@ -72,6 +84,8 @@ const db = window.supabase.createClient(PROJECT_URL, PUBLISHABLE_KEY);
 const friends = ["DJ","Ayesha","Pratik"];
 let expenses = [];
 let busy = false;
+ const DJ_UID = "c8c7ae0f-0907-4dc6-9dbd-16dedced5d8c";
+let isDJ = false;
 
 const el = id => document.getElementById(id);
 const safe = s => String(s).replace(/[&<>"']/g,c=>({
@@ -80,6 +94,44 @@ const safe = s => String(s).replace(/[&<>"']/g,c=>({
 const money = n => "฿"+n.toLocaleString("en-US",{maximumFractionDigits:2});
 
 function setStatus(message){el("status").textContent=message}
+ async function refreshAuth(){
+  const {data,error}=await db.auth.getUser();
+  isDJ=!error && data.user?.id===DJ_UID;
+
+  el("adminCard").querySelector("button").style.display=isDJ?"none":"block";
+  el("adminEmail").style.display=isDJ?"none":"block";
+  el("adminPassword").style.display=isDJ?"none":"block";
+  el("signOutButton").style.display=isDJ?"block":"none";
+  el("authStatus").textContent=isDJ
+    ?"Signed in as DJ. Delete enabled."
+    :"Not signed in as DJ.";
+  render();
+}
+
+async function signInDJ(){
+  const email=el("adminEmail").value.trim();
+  const password=el("adminPassword").value;
+  const {data,error}=await db.auth.signInWithPassword({email,password});
+
+  if(error){
+    el("authStatus").textContent="Login failed: "+error.message;
+    return;
+  }
+
+  if(data.user.id!==DJ_UID){
+    await db.auth.signOut();
+    el("authStatus").textContent="This is not the DJ admin account.";
+    return;
+  }
+
+  el("adminPassword").value="";
+  await refreshAuth();
+}
+
+async function signOutDJ(){
+  await db.auth.signOut();
+  await refreshAuth();
+}
 
 async function loadExpenses(){
  const {data,error}=await db.from("expenses").select("*").order("created_at",{ascending:false});
@@ -95,7 +147,7 @@ function render(){
  el("inr").textContent="₹"+Math.round(total*(Number(el("rate").value)||0)).toLocaleString("en-IN")+" estimated";
  el("expenses").innerHTML=expenses.length?expenses.map(e=>
  `<div class="item">
- <button class="delete" onclick="deleteExpense(${Number(e.id)})">Delete</button>
+ ${isDJ ? `<button class="delete" onclick="deleteExpense(${Number(e.id)})">Delete</button>` : ""}
  <strong>${safe(e.description)}</strong>
  <div class="small">${safe(e.paid_by)} paid · split ${Array.isArray(e.split_between)?e.split_between.map(safe).join(", "):""}</div>
  <div class="amount">${money(Number(e.amount))}</div>
@@ -156,6 +208,10 @@ el("rate").addEventListener("input",render);
 db.channel("shared-expenses")
  .on("postgres_changes",{event:"*",schema:"public",table:"expenses"},loadExpenses)
  .subscribe();
+ db.auth.onAuthStateChange(() => {
+  setTimeout(refreshAuth, 0);
+});
+refreshAuth();
 loadExpenses();
 </script>
 </body>
