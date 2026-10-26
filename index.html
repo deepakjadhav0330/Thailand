@@ -350,11 +350,11 @@ button:disabled {
 </select>
 <label>Paid by</label>
 <select id="payer">
-<option>DJ</option><option>Ayesha</option><option>Pratik</option>
+<option>DJ</option><option>Chotu</option><option>Pratik</option>
 </select>
 <label>Split between</label>
 <label><input class="person" type="checkbox" value="DJ" checked style="width:auto"> DJ</label>
-<label><input class="person" type="checkbox" value="Ayesha" checked style="width:auto"> Ayesha</label>
+<label><input class="person" type="checkbox" value="Chotu" checked style="width:auto"> Chotu</label>
 <label><input class="person" type="checkbox" value="Pratik" checked style="width:auto"> Pratik</label>
 <button id="add" onclick="addExpense()">＋ Add shared expense</button>
 </div>
@@ -375,7 +375,7 @@ button:disabled {
 const PROJECT_URL = "https://dfawemtboacvbsugbytw.supabase.co";
 const PUBLISHABLE_KEY = "sb_publishable_ktqBJjyiwc7iOARXkvN0hQ_8ELqatta";
 const db = window.supabase.createClient(PROJECT_URL, PUBLISHABLE_KEY);
-const friends = ["DJ","Ayesha","Pratik"];
+const friends = ["DJ","Chotu","Pratik"];
 let expenses = [];
 let busy = false;
  const DJ_UID = "c8c7ae0f-0907-4dc6-9dbd-16dedced5d8c";
@@ -454,7 +454,7 @@ ${e.currency==="INR" && e.original_amount!=null
 </div>
  </div>`).join(""):'<p class="small">No shared expenses yet.</p>';
 
- const bal={DJ:0,Ayesha:0,Pratik:0};
+ const bal={DJ:0,Chotu:0,Pratik:0};
  expenses.forEach(e=>{
   const amount=Number(e.amount);
   const people=Array.isArray(e.split_between)?e.split_between:[];
