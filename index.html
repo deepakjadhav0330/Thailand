@@ -223,6 +223,56 @@ button:disabled {
   color: #55e5ff;
   font-weight: 800;
 }
+.dashboard-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.glass-tile {
+  padding: 17px 14px;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 20px;
+  background: linear-gradient(
+    135deg,
+    rgba(65,190,255,.13),
+    rgba(255,255,255,.035)
+  );
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  min-width: 0;
+}
+
+.tile-icon {
+  display: block;
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.tile-label {
+  color: #a7b8d1;
+  font-size: 12px;
+  margin-bottom: 7px;
+}
+
+.tile-value {
+  font-size: 15px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  color: #55e5ff;
+}
+
+@media (max-width: 360px) {
+  .glass-tile {
+    padding: 13px 10px;
+  }
+
+  .tile-value {
+    font-size: 13px;
+  }
+}
 </style>
 </head>
 <body>
@@ -236,6 +286,19 @@ button:disabled {
 <label>THB to INR exchange rate</label>
 <input id="rate" type="number" value="2.81" min="0.01" step="0.01">
 <p id="status">Connecting to shared database…</p>
+<div class="dashboard-tiles">
+  <div class="glass-tile">
+    <span class="tile-icon">🇹🇭</span>
+    <div class="tile-label">Exchange Rate</div>
+    <div class="tile-value">1 THB = ₹<span id="rateDisplay">2.81</span></div>
+  </div>
+
+  <div class="glass-tile">
+    <span class="tile-icon">🧾</span>
+    <div class="tile-label">Total Entries</div>
+    <div class="tile-value" id="entryCount">0</div>
+  </div>
+</div>
 
 <div class="card" id="adminCard">
   <h3>DJ admin login</h3>
@@ -346,6 +409,8 @@ async function loadExpenses(){
 function render(){
  const total=expenses.reduce((s,e)=>s+Number(e.amount),0);
  el("total").textContent=money(total);
+ el("rateDisplay").textContent=(Number(el("rate").value)||0).toFixed(2);
+ el("entryCount").textContent=expenses.length;
  el("inr").textContent="₹"+Math.round(total*(Number(el("rate").value)||0)).toLocaleString("en-IN")+" estimated";
  el("expenses").innerHTML=expenses.length?expenses.map(e=>
  `<div class="item">
