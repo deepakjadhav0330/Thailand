@@ -333,6 +333,17 @@ button:disabled {
 <input id="desc" placeholder="Dinner, taxi, hotel…">
 <label>Amount (THB ฿)</label>
 <input id="amount" type="number" min="0.01" step="0.01" placeholder="1200">
+  <label for="category">Category</label>
+<select id="category">
+  <option value="Food & Drinks">🍜 Food & Drinks</option>
+  <option value="Accommodation">🏨 Accommodation</option>
+  <option value="Transport">🚕 Transport</option>
+  <option value="Activities & Nightlife">🎉 Activities & Nightlife</option>
+  <option value="Shopping">🛍️ Shopping</option>
+  <option value="Flights">✈️ Flights</option>
+  <option value="Health & Essentials">💊 Health & Essentials</option>
+  <option value="Other" selected>📦 Other</option>
+</select>
 <label>Paid by</label>
 <select id="payer">
 <option>DJ</option><option>Ayesha</option><option>Pratik</option>
@@ -429,8 +440,9 @@ function render(){
  el("expenses").innerHTML=expenses.length?expenses.map(e=>
  `<div class="item">
  ${isDJ ? `<button class="delete" onclick="deleteExpense(${Number(e.id)})">Delete</button>` : ""}
- <strong>${safe(e.description)}</strong>
- <div class="small">${safe(e.paid_by)} paid · split ${Array.isArray(e.split_between)?e.split_between.map(safe).join(", "):""}</div>
+<strong>${safe(e.description)}</strong>
+<div class="small">📁 ${safe(e.category || "Other")}</div>
+<div class="small">${safe(e.paid_by)} paid · split ${Array.isArray(e.split_between)?e.split_between.map(safe).join(", "):""}</div>
  <div class="amount">${money(Number(e.amount))}</div>
  </div>`).join(""):'<p class="small">No shared expenses yet.</p>';
 
@@ -466,12 +478,13 @@ async function addExpense(){
  const description=el("desc").value.trim();
  const amount=Number(el("amount").value);
  const paid_by=el("payer").value;
+  const category=el("category").value;
  const split_between=[...document.querySelectorAll(".person:checked")].map(x=>x.value);
  if(!description||!Number.isFinite(amount)||amount<=0||!split_between.length){
   alert("Enter a description, a valid amount, and at least one person to split with.");return;
  }
  busy=true;el("add").disabled=true;
- const {error}=await db.from("expenses").insert([{description,amount,paid_by,split_between}]);
+const {error}=await db.from("expenses").insert([{description,amount,paid_by,split_between,category}]);
  busy=false;el("add").disabled=false;
  if(error){setStatus("Could not save: "+error.message);return}
  el("desc").value="";el("amount").value="";
