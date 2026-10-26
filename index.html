@@ -297,8 +297,7 @@ button:disabled {
 <div class="small">TOTAL SHARED EXPENSES</div>
 <div class="stat" id="total">฿0</div>
 <div id="inr" class="small">₹0 estimated</div>
-<label>THB to INR exchange rate</label>
-<input id="rate" type="number" value="2.81" min="0.01" step="0.01">
+<div class="small">🇹🇭 Fixed exchange rate: ฿1 = ₹2.81</div>
 <p id="status">Connecting to shared database…</p>
 <div class="dashboard-tiles">
   <div class="glass-tile">
@@ -331,8 +330,13 @@ button:disabled {
 <h3>Add expense</h3>
 <label>Description</label>
 <input id="desc" placeholder="Dinner, taxi, hotel…">
-<label>Amount (THB ฿)</label>
+<label>Amount</label>
 <input id="amount" type="number" min="0.01" step="0.01" placeholder="1200">
+  <label for="currency">Currency</label>
+<select id="currency">
+  <option value="THB" selected>🇹🇭 Thai Baht (THB ฿)</option>
+  <option value="INR">🇮🇳 Indian Rupees (INR ₹)</option>
+</select>
   <label for="category">Category</label>
 <select id="category">
   <option value="Food & Drinks">🍜 Food & Drinks</option>
@@ -434,16 +438,20 @@ async function loadExpenses(){
 function render(){
  const total=expenses.reduce((s,e)=>s+Number(e.amount),0);
  el("total").textContent=money(total);
- el("rateDisplay").textContent=(Number(el("rate").value)||0).toFixed(2);
- el("entryCount").textContent=expenses.length;
- el("inr").textContent="₹"+Math.round(total*(Number(el("rate").value)||0)).toLocaleString("en-IN")+" estimated";
+el("rateDisplay").textContent="2.81"; 
+  el("entryCount").textContent=expenses.length;
+el("inr").textContent="₹"+Math.round(total*2.81).toLocaleString("en-IN")+" estimated";
  el("expenses").innerHTML=expenses.length?expenses.map(e=>
  `<div class="item">
  ${isDJ ? `<button class="delete" onclick="deleteExpense(${Number(e.id)})">Delete</button>` : ""}
 <strong>${safe(e.description)}</strong>
 <div class="small">📁 ${safe(e.category || "Other")}</div>
 <div class="small">${safe(e.paid_by)} paid · split ${Array.isArray(e.split_between)?e.split_between.map(safe).join(", "):""}</div>
- <div class="amount">${money(Number(e.amount))}</div>
+<div class="amount">
+${e.currency==="INR" && e.original_amount!=null
+  ? "₹"+Number(e.original_amount).toLocaleString("en-IN",{maximumFractionDigits:2})+" (≈ "+money(Number(e.amount))+")"
+  : money(Number(e.amount))+" (≈ ₹"+Math.round(Number(e.amount)*2.81).toLocaleString("en-IN")+")"}
+</div>
  </div>`).join(""):'<p class="small">No shared expenses yet.</p>';
 
  const bal={DJ:0,Ayesha:0,Pratik:0};
@@ -465,7 +473,7 @@ function render(){
   for(const c of creditors){
    const n=Math.min(d.amount,c.amount);
    if(n>0.01){
-    transfers.push(`${d.name} pays ${c.name} ${money(n)}`);
+    transfers.push(`${d.name} pays ${c.name} ${money(n)} (≈ ₹${Math.round(n*2.81).toLocaleString("en-IN")})`);
     d.amount-=n;c.amount-=n;
    }
   }
@@ -479,15 +487,29 @@ async function addExpense(){
  const amount=Number(el("amount").value);
  const paid_by=el("payer").value;
   const category=el("category").value;
+  const currency=el("currency").value;
+const original_amount=amount;
+const amount_thb=currency==="INR"?amount/2.81:amount;
  const split_between=[...document.querySelectorAll(".person:checked")].map(x=>x.value);
  if(!description||!Number.isFinite(amount)||amount<=0||!split_between.length){
   alert("Enter a description, a valid amount, and at least one person to split with.");return;
  }
  busy=true;el("add").disabled=true;
-const {error}=await db.from("expenses").insert([{description,amount,paid_by,split_between,category}]);
+const {error}=await db.from("expenses").insert([{
+  description,
+  amount:amount_thb,
+  original_amount,
+  currency,
+  paid_by,
+  split_between,
+  category
+}]);
  busy=false;el("add").disabled=false;
  if(error){setStatus("Could not save: "+error.message);return}
- el("desc").value="";el("amount").value="";
+ el("desc").value="";
+el("amount").value="";
+el("currency").value="THB";
+el("category").value="Other";
  await loadExpenses();
 }
 
@@ -498,7 +520,6 @@ async function deleteExpense(id){
  await loadExpenses();
 }
 
-el("rate").addEventListener("input",render);
 db.channel("shared-expenses")
  .on("postgres_changes",{event:"*",schema:"public",table:"expenses"},loadExpenses)
  .subscribe();
