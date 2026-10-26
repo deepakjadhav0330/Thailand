@@ -205,6 +205,24 @@ button:disabled {
     transition: none !important;
   }
 }
+.built-by {
+  margin: 36px 0 12px;
+  padding: 20px 12px;
+  text-align: center;
+  color: #a7b8d1;
+  font-size: 13px;
+  letter-spacing: .5px;
+  border-top: 1px solid rgba(255,255,255,.10);
+}
+
+.built-by span {
+  color: #ff7295;
+}
+
+.built-by strong {
+  color: #55e5ff;
+  font-weight: 800;
+}
 </style>
 </head>
 <body>
@@ -398,5 +416,10 @@ db.channel("shared-expenses")
 refreshAuth();
 loadExpenses();
 </script>
+
+<footer class="built-by">
+  Made with <span>♥</span> & a little ☕ by <strong>DJ</strong>
+</footer>
+  
 </body>
 </html>
