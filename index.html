@@ -43,7 +43,7 @@
 html { background: var(--bg); scroll-behavior: smooth; }
 body {
   min-height: 100vh;
-  padding: 38px 20px 96px;
+  padding: 38px 20px calc(68px + env(safe-area-inset-bottom, 0px) + 16px);
   max-width: 780px;
   margin: 0 auto;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -70,14 +70,21 @@ body {
   from { transform:translate(0,0) scale(1); }
   to   { transform:translate(28px,18px) scale(1.06); }
 }
-.site-header,.card,footer { position:relative;z-index:1; }
+.site-header,.tab-panel,.card,footer { position:relative; z-index:1; }
 
 /* ══════════════════════════════════════════
-   HEADER
+   HEADER — with mini total for non-Home tabs
 ══════════════════════════════════════════ */
 .site-header { margin-bottom:26px; animation:fadeInDown .55s ease both; }
+
+.header-row {
+  display:flex; align-items:flex-end;
+  justify-content:space-between; gap:12px;
+}
+.header-left { min-width:0; }
+
 .site-title {
-  font-size:clamp(36px,7.5vw,52px); font-weight:900; letter-spacing:-2.5px; line-height:1.04;
+  font-size:clamp(30px,7vw,52px); font-weight:900; letter-spacing:-2.5px; line-height:1.04;
   background:linear-gradient(115deg,#fff 25%,var(--cyan) 58%,var(--violet) 90%);
   -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
 }
@@ -92,6 +99,111 @@ body {
 .chip-chotu  { color:var(--chotu);  background:rgba(167,139,250,.07); border-color:rgba(167,139,250,.22); }
 .chip-pratik { color:var(--pratik); background:rgba(251,191,36,.07);  border-color:rgba(251,191,36,.22); }
 
+/* Header mini total (hidden on Home) */
+.header-mini {
+  display:none; flex-direction:column; align-items:flex-end;
+  flex-shrink:0; padding-bottom:2px;
+}
+.header-mini.show { display:flex; }
+.hm-label { font-size:10px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--muted); }
+.hm-val   { font-size:20px; font-weight:900; letter-spacing:-1.2px; color:var(--emerald);
+            text-shadow:0 0 20px rgba(52,211,153,.4); }
+
+/* ══════════════════════════════════════════
+   BOTTOM TAB BAR
+══════════════════════════════════════════ */
+.tabbar {
+  position: fixed;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 100%; max-width: 780px;
+  z-index: 200;
+  background: rgba(3,9,20,0.96);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border-top: 1px solid rgba(255,255,255,0.07);
+  display: flex; align-items: stretch;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -12px 48px rgba(0,0,0,.65), 0 -1px 0 rgba(255,255,255,.04);
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; border: none; background: transparent; color: var(--muted);
+  cursor: pointer; padding: 9px 4px 10px; min-height: 62px;
+  width: auto; border-radius: 0; position: relative;
+  transition: color .2s;
+  -webkit-tap-highlight-color: transparent; outline: none;
+}
+.tab-btn:active { opacity: .7; }
+
+/* Active top-edge indicator */
+.tab-btn::before {
+  content: '';
+  position: absolute; top: 0; left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 30px; height: 2.5px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(90deg, var(--cyan), var(--violet));
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+}
+.tab-btn.active::before { transform: translateX(-50%) scaleX(1); }
+
+.tab-icon {
+  font-size: 22px; line-height: 1; display: block;
+  opacity: .38;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1), filter .22s, opacity .2s;
+}
+.tab-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .2px;
+  color: inherit; opacity: .38; transition: color .2s, opacity .2s;
+}
+
+.tab-btn.active            { color: var(--cyan); }
+.tab-btn.active .tab-icon  { opacity:1; transform:translateY(-3px) scale(1.14); filter:drop-shadow(0 0 10px rgba(34,211,238,.65)); }
+.tab-btn.active .tab-label { opacity:1; color:var(--cyan); }
+
+/* ── ADD tab special pill ── */
+.tab-add-pill {
+  width: 46px; height: 46px; border-radius: 14px;
+  background: linear-gradient(135deg, #0891b2, #0d9488);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(6,182,212,.38);
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .22s;
+  margin-bottom: 1px;
+}
+.tab-btn[data-tab="add"] .tab-icon  { font-size:26px; opacity:1; color:#fff; filter:none; transform:none; }
+.tab-btn[data-tab="add"].active .tab-add-pill { transform:scale(1.1) translateY(-2px); box-shadow:0 8px 28px rgba(6,182,212,.6); }
+.tab-btn[data-tab="add"].active .tab-icon     { opacity:1; filter:none; transform:none; }
+.tab-btn[data-tab="add"].active .tab-label    { color:var(--cyan); }
+.tab-btn[data-tab="add"]::before              { display:none; } /* no top bar for add */
+
+/* ── History badge ── */
+.tab-badge {
+  position: absolute; top: 8px; right: calc(50% - 20px);
+  min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 99px; background: var(--rose); color: #fff;
+  font-size: 9px; font-weight: 800; letter-spacing: -.3px;
+  align-items: center; justify-content: center;
+  border: 1.5px solid rgba(3,9,20,.95);
+  display: none;
+}
+.tab-badge.show { display: flex; }
+
+/* ══════════════════════════════════════════
+   TAB PANELS
+══════════════════════════════════════════ */
+.tab-panel { display: none; }
+.tab-panel.active {
+  display: block;
+  animation: tabEnter .24s ease-out both;
+}
+@keyframes tabEnter {
+  from { opacity:0; transform:translateY(10px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
 /* ══════════════════════════════════════════
    CARDS
 ══════════════════════════════════════════ */
@@ -102,11 +214,10 @@ body {
   box-shadow:var(--sh),inset 0 1px 0 rgba(255,255,255,.055);
   backdrop-filter:blur(24px) saturate(160%);
   -webkit-backdrop-filter:blur(24px) saturate(160%);
-  animation:fadeInUp .5s ease both;
+  animation:fadeInUp .45s ease both;
 }
-.card:nth-child(2){animation-delay:.06s} .card:nth-child(3){animation-delay:.12s}
-.card:nth-child(4){animation-delay:.18s} .card:nth-child(5){animation-delay:.24s}
-.card:nth-child(6){animation-delay:.30s} .card:nth-child(7){animation-delay:.36s}
+.card:nth-child(2){animation-delay:.07s}
+.card:nth-child(3){animation-delay:.14s}
 
 .card-glow-cyan {
   border-color:transparent;
@@ -127,8 +238,7 @@ body {
   color:var(--muted2); margin-bottom:4px;
 }
 .card h3 {
-  font-size:17px; font-weight:700; letter-spacing:-.35px;
-  color:var(--text); margin-bottom:18px;
+  font-size:17px; font-weight:700; letter-spacing:-.35px; color:var(--text); margin-bottom:18px;
 }
 
 /* ══════════════════════════════════════════
@@ -147,7 +257,6 @@ body {
 }
 .hero-inr  { font-size:16px; font-weight:600; color:var(--muted2); margin-bottom:2px; }
 .hero-rate { font-size:12.5px; color:var(--muted); }
-
 .status-pill {
   display:inline-flex; align-items:center; gap:7px; margin-top:14px;
   padding:6px 13px; border-radius:99px; font-size:12px; font-weight:600;
@@ -159,20 +268,18 @@ body {
   animation:liveBlink 2.2s ease-in-out infinite;
 }
 @keyframes liveBlink {
-  0%,100% { opacity:1;  box-shadow:0 0 6px var(--emerald); }
+  0%,100% { opacity:1; box-shadow:0 0 6px var(--emerald); }
   50%      { opacity:.3; box-shadow:none; }
 }
 
 /* ══════════════════════════════════════════
-   DASHBOARD TILES  (2×2 grid)
+   DASHBOARD TILES (2×2)
 ══════════════════════════════════════════ */
-.tiles-grid {
-  display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:22px;
-}
+.tiles-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:22px; }
 .glass-tile {
   padding:16px 14px; border-radius:var(--r);
   border:1px solid var(--border); background:rgba(255,255,255,.03);
-  transition:transform .2s ease,border-color .2s,box-shadow .2s; cursor:default;
+  transition:transform .2s,border-color .2s,box-shadow .2s; cursor:default;
 }
 .glass-tile:hover { transform:translateY(-3px); border-color:var(--border2); box-shadow:0 6px 24px rgba(0,0,0,.4); }
 .tile-icon  { font-size:22px; margin-bottom:9px; display:block; }
@@ -180,7 +287,7 @@ body {
 .tile-value { font-size:15px; font-weight:800; color:var(--cyan); letter-spacing:-.4px; overflow-wrap:anywhere; }
 
 /* ══════════════════════════════════════════
-   ADMIN CARD
+   ADMIN CARD (nested)
 ══════════════════════════════════════════ */
 #adminCard {
   margin-top:18px; padding:20px; border-radius:var(--r);
@@ -218,18 +325,13 @@ select {
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
   background-repeat:no-repeat; background-position:right 14px center; padding-right:42px;
 }
-
-/* ── Split preview (Feature 1) ── */
 .split-preview {
-  display:none;
-  margin-top:8px; padding:10px 14px; border-radius:var(--r-sm);
+  display:none; margin-top:8px; padding:10px 14px; border-radius:var(--r-sm);
   background:rgba(52,211,153,.07); border:1px solid rgba(52,211,153,.2);
   font-size:13px; font-weight:700; color:var(--emerald);
   animation:fadeInUp .2s ease both;
 }
 .split-preview .sp-sub { font-size:11px; font-weight:600; color:var(--muted); margin-top:2px; }
-
-/* ── Person checkboxes ── */
 .person-checks { display:flex; gap:8px; flex-wrap:wrap; }
 .pcheck-label {
   display:inline-flex; align-items:center; gap:7px;
@@ -267,18 +369,15 @@ button {
 .btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 28px rgba(6,182,212,.42); }
 .btn-primary:active { transform:scale(.98); }
 .btn-primary:disabled { opacity:.48; cursor:not-allowed; transform:none; }
-
 .btn-secondary {
   background:rgba(255,255,255,.05); border:1px solid var(--border); color:var(--text); margin-top:8px;
 }
 .btn-secondary:hover { background:rgba(255,255,255,.09); border-color:var(--border2); }
-
 .btn-copy {
   background:rgba(167,139,250,.08); border:1px solid rgba(167,139,250,.22);
   color:var(--violet); margin-top:18px; font-size:14px;
 }
 .btn-copy:hover { background:rgba(167,139,250,.16); border-color:rgba(167,139,250,.42); transform:translateY(-1px); }
-
 .btn-del {
   width:auto; min-height:30px; padding:5px 11px; font-size:11.5px; font-weight:700;
   background:rgba(251,113,133,.07); border:1px solid rgba(251,113,133,.2);
@@ -287,37 +386,28 @@ button {
 .btn-del:hover { background:rgba(251,113,133,.16); border-color:rgba(251,113,133,.42); }
 
 /* ══════════════════════════════════════════
-   EXPENSE LIST  (day-grouped, Feature 3)
+   EXPENSE LIST (day-grouped)
 ══════════════════════════════════════════ */
 .day-header {
   display:flex; align-items:center; gap:10px;
   padding:16px 0 8px; margin-top:4px;
   font-size:10.5px; font-weight:800; letter-spacing:1.1px; text-transform:uppercase; color:var(--muted);
 }
-.day-header::after {
-  content:''; flex:1; height:1px; background:rgba(255,255,255,.07);
-}
+.day-header::after { content:''; flex:1; height:1px; background:rgba(255,255,255,.07); }
 .day-header:first-child { padding-top:4px; }
-
 .exp-item {
   display:grid; grid-template-columns:auto 1fr auto; align-items:center;
-  gap:12px; padding:13px 0;
-  border-bottom:1px solid rgba(255,255,255,.06);
+  gap:12px; padding:13px 0; border-bottom:1px solid rgba(255,255,255,.06);
   animation:slideRight .3s ease both;
 }
 .exp-item:last-child { border-bottom:0; }
-
 .exp-left { display:flex; align-items:center; }
 .cat-bar  { width:3px; height:44px; border-radius:99px; flex-shrink:0; margin-right:11px; }
 .exp-icon { font-size:22px; line-height:1; }
-
 .exp-body { min-width:0; }
 .exp-desc { font-size:15px; font-weight:600; overflow-wrap:anywhere; line-height:1.3; }
-.exp-meta {
-  margin-top:5px; display:flex; flex-wrap:wrap; gap:5px; align-items:center;
-}
+.exp-meta { margin-top:5px; display:flex; flex-wrap:wrap; gap:5px; align-items:center; }
 .exp-time { font-size:11px; color:var(--muted); margin-top:3px; }
-
 .mbadge {
   display:inline-flex; align-items:center; gap:3px; padding:2px 8px;
   border-radius:99px; font-size:11px; font-weight:700;
@@ -326,7 +416,6 @@ button {
 .mbadge-dj     { color:var(--dj);     background:rgba(34,211,238,.07);  border-color:rgba(34,211,238,.15); }
 .mbadge-chotu  { color:var(--chotu);  background:rgba(167,139,250,.07); border-color:rgba(167,139,250,.15); }
 .mbadge-pratik { color:var(--pratik); background:rgba(251,191,36,.07);  border-color:rgba(251,191,36,.15); }
-
 .exp-right { text-align:right; flex-shrink:0; }
 .exp-amount     { font-size:16px; font-weight:800; color:var(--emerald); letter-spacing:-.5px; }
 .exp-amount-sub { font-size:11px; color:var(--muted); margin-top:2px; }
@@ -347,12 +436,11 @@ button {
 .cat-amt   { font-size:13px; font-weight:800; color:var(--emerald); min-width:72px; text-align:right; letter-spacing:-.4px; }
 
 /* ══════════════════════════════════════════
-   SETTLEMENT  (Feature 5: per-person breakdown)
+   SETTLEMENT
 ══════════════════════════════════════════ */
 .person-bkd {
   display:flex; align-items:center; justify-content:space-between;
-  gap:10px; padding:14px 0;
-  border-bottom:1px solid rgba(255,255,255,.06);
+  gap:10px; padding:14px 0; border-bottom:1px solid rgba(255,255,255,.06);
 }
 .person-bkd:last-child { border-bottom:0; }
 .bkd-left  { display:flex; align-items:center; gap:9px; min-width:64px; }
@@ -361,16 +449,11 @@ button {
 .bkd-col   { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
 .bkd-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; color:var(--muted); }
 .bkd-val   { font-size:13px; font-weight:800; color:var(--text); }
-
-.section-divider {
-  height:1px; background:rgba(255,255,255,.07); margin:20px 0; border:none;
-}
+.section-divider { height:1px; background:rgba(255,255,255,.07); margin:20px 0; border:none; }
 .section-label {
   font-size:10.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
   color:var(--muted); margin-bottom:12px;
 }
-
-/* Avatar */
 .avatar {
   width:36px; height:36px; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
@@ -380,8 +463,6 @@ button {
 .av-chotu  { background:rgba(167,139,250,.14); color:var(--chotu);  border:1px solid rgba(167,139,250,.32); }
 .av-pratik { background:rgba(251,191,36,.14);  color:var(--pratik); border:1px solid rgba(251,191,36,.32); }
 .av-sm { width:30px; height:30px; font-size:10.5px; }
-
-/* Transfer rows */
 .xfer-row {
   display:flex; align-items:center; gap:8px; padding:12px 0;
   border-bottom:1px solid rgba(255,255,255,.06);
@@ -398,16 +479,13 @@ button {
 }
 .xfer-badge small { display:block; font-size:10px; font-weight:600; opacity:.7; margin-top:1px; }
 .xfer-arrow { font-size:18px; color:var(--cyan); flex-shrink:0; }
-
 .bal-pos { color:var(--emerald); }
 .bal-neg { color:var(--rose); }
 
 /* ══════════════════════════════════════════
    EMPTY STATES
 ══════════════════════════════════════════ */
-.empty {
-  text-align:center; padding:28px 16px; color:var(--muted); font-size:13.5px;
-}
+.empty { text-align:center; padding:28px 16px; color:var(--muted); font-size:13.5px; }
 .empty-icon { font-size:32px; display:block; margin-bottom:9px; opacity:.45; }
 
 /* ══════════════════════════════════════════
@@ -444,16 +522,16 @@ button {
 @keyframes fadeInUp   { from{opacity:0;transform:translateY(22px)}  to{opacity:1;transform:translateY(0)} }
 @keyframes fadeInDown { from{opacity:0;transform:translateY(-14px)} to{opacity:1;transform:translateY(0)} }
 @keyframes slideRight { from{opacity:0;transform:translateX(14px)}  to{opacity:1;transform:translateX(0)} }
-@keyframes toastIn  { from{opacity:0;transform:translateX(18px) scale(.95)} to{opacity:1;transform:translateX(0) scale(1)} }
-@keyframes toastOut { from{opacity:1;transform:translateX(0) scale(1)} to{opacity:0;transform:translateX(18px) scale(.95)} }
+@keyframes toastIn    { from{opacity:0;transform:translateX(18px) scale(.95)} to{opacity:1;transform:translateX(0) scale(1)} }
+@keyframes toastOut   { from{opacity:1;transform:translateX(0) scale(1)} to{opacity:0;transform:translateX(18px) scale(.95)} }
 
 /* ══════════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════════ */
 @media (max-width:520px) {
-  body { padding:24px 14px 64px; }
+  body { padding:24px 14px calc(68px + env(safe-area-inset-bottom,0px) + 12px); }
   .card { padding:18px; }
-  .site-title { font-size:34px; }
+  .site-title { font-size:28px; letter-spacing:-1.8px; }
   .hero-total { font-size:46px; }
   .glass-tile { padding:13px 11px; }
   .xfer-row { flex-wrap:wrap; justify-content:center; gap:6px; }
@@ -464,177 +542,223 @@ button {
 @media (max-width:380px) {
   .bkd-stats { gap:8px; }
   .bkd-val { font-size:12px; }
+  .site-title { font-size:24px; }
+  .hm-val { font-size:17px; }
 }
 @media (prefers-reduced-motion:reduce) {
   *,*::before,*::after { animation:none !important; transition:none !important; }
 }
+
 </style>
 </head>
 <body>
 
+<!-- Background orbs -->
 <div class="orb orb-1" aria-hidden="true"></div>
 <div class="orb orb-2" aria-hidden="true"></div>
 <div class="orb orb-3" aria-hidden="true"></div>
+
+<!-- Toast root -->
 <div id="toast-root" aria-live="polite" aria-atomic="false"></div>
 
-<!-- HEADER -->
+<!-- ══ PERSISTENT HEADER ══════════════════ -->
 <header class="site-header">
-  <h1 class="site-title">🇹🇭 ThaiTrip Split</h1>
-  <div class="persons-row">
-    <span class="person-chip chip-dj"><span class="dot"></span>DJ</span>
-    <span class="person-chip chip-chotu"><span class="dot"></span>Chotu</span>
-    <span class="person-chip chip-pratik"><span class="dot"></span>Pratik</span>
+  <div class="header-row">
+    <div class="header-left">
+      <h1 class="site-title">🇹🇭 ThaiTrip Split</h1>
+      <div class="persons-row">
+        <span class="person-chip chip-dj"><span class="dot"></span>DJ</span>
+        <span class="person-chip chip-chotu"><span class="dot"></span>Chotu</span>
+        <span class="person-chip chip-pratik"><span class="dot"></span>Pratik</span>
+      </div>
+    </div>
+    <!-- shown on non-Home tabs -->
+    <div class="header-mini" id="headerMini">
+      <span class="hm-label">Total</span>
+      <span class="hm-val" id="headerMiniVal">฿0</span>
+    </div>
   </div>
 </header>
 
-<!-- HERO STATS -->
-<div class="card card-glow-cyan">
-  <div class="card-eyebrow">Total Shared Expenses</div>
-  <div class="hero-total" id="total" data-raw="0">฿0</div>
-  <div class="hero-inr" id="inr">₹0 estimated</div>
-  <div class="hero-rate">🇹🇭 Fixed rate: ฿1 = ₹<span id="rateDisplay">2.81</span></div>
-  <div class="status-pill">
-    <span class="live-dot"></span>
-    <span id="status">Connecting…</span>
-  </div>
+<!-- ══ PANEL: HOME ════════════════════════ -->
+<div class="tab-panel active" id="panel-home" role="tabpanel" aria-labelledby="tab-home">
 
-  <!-- 4 live tiles (Feature 4) -->
-  <div class="tiles-grid">
-    <div class="glass-tile">
-      <span class="tile-icon">📅</span>
-      <div class="tile-label">Today's Spend</div>
-      <div class="tile-value" id="tileToday">฿0</div>
+  <div class="card card-glow-cyan">
+    <div class="card-eyebrow">Total Shared Expenses</div>
+    <div class="hero-total" id="total" data-raw="0">฿0</div>
+    <div class="hero-inr" id="inr">₹0 estimated</div>
+    <div class="hero-rate">🇹🇭 Fixed rate: ฿1 = ₹<span id="rateDisplay">2.81</span></div>
+    <div class="status-pill">
+      <span class="live-dot"></span>
+      <span id="status">Connecting…</span>
     </div>
-    <div class="glass-tile">
-      <span class="tile-icon">🧾</span>
-      <div class="tile-label">Total Entries</div>
-      <div class="tile-value" id="entryCount">0</div>
-    </div>
-    <div class="glass-tile">
-      <span class="tile-icon">👑</span>
-      <div class="tile-label">Top Payer</div>
-      <div class="tile-value" id="tileTopPayer">—</div>
-    </div>
-    <div class="glass-tile">
-      <span class="tile-icon">📊</span>
-      <div class="tile-label">Biggest Category</div>
-      <div class="tile-value" id="tileBigCat">—</div>
-    </div>
-  </div>
 
-  <!-- Admin login -->
-  <div id="adminCard">
-    <h3>🔐 DJ Admin</h3>
-    <div id="adminLoginForm">
-      <div class="form-group">
-        <label class="field-label" for="adminEmail">Email</label>
-        <input id="adminEmail" type="email" placeholder="DJ account email" autocomplete="username">
+    <div class="tiles-grid">
+      <div class="glass-tile">
+        <span class="tile-icon">📅</span>
+        <div class="tile-label">Today's Spend</div>
+        <div class="tile-value" id="tileToday">฿0</div>
       </div>
-      <div class="form-group">
-        <label class="field-label" for="adminPassword">Password</label>
-        <input id="adminPassword" type="password" placeholder="Password" autocomplete="current-password">
+      <div class="glass-tile">
+        <span class="tile-icon">🧾</span>
+        <div class="tile-label">Total Entries</div>
+        <div class="tile-value" id="entryCount">0</div>
       </div>
-      <button class="btn-primary" onclick="signInDJ()">Sign in as DJ</button>
+      <div class="glass-tile">
+        <span class="tile-icon">👑</span>
+        <div class="tile-label">Top Payer</div>
+        <div class="tile-value" id="tileTopPayer">—</div>
+      </div>
+      <div class="glass-tile">
+        <span class="tile-icon">📊</span>
+        <div class="tile-label">Biggest Category</div>
+        <div class="tile-value" id="tileBigCat">—</div>
+      </div>
     </div>
-    <button class="btn-secondary" onclick="signOutDJ()" id="signOutButton" style="display:none">Sign out</button>
-    <p id="authStatus"></p>
-  </div>
-</div>
 
-<!-- ADD EXPENSE -->
-<div class="card">
-  <h3>＋ Add Expense</h3>
-
-  <div class="form-group">
-    <label class="field-label" for="desc">Description</label>
-    <input id="desc" placeholder="Dinner, taxi, hotel…">
-  </div>
-
-  <div class="form-group">
-    <label class="field-label" for="amount">Amount</label>
-    <input id="amount" type="number" min="0.01" step="0.01" placeholder="1200"
-           oninput="updateSplitPreview()" onchange="updateSplitPreview()">
-    <!-- Feature 1: Split preview -->
-    <div class="split-preview" id="splitPreview">
-      <div id="spMain"></div>
-      <div class="sp-sub" id="spSub"></div>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <label class="field-label" for="currency">Currency</label>
-    <select id="currency" onchange="updateSplitPreview()">
-      <option value="THB" selected>🇹🇭 Thai Baht (THB ฿)</option>
-      <option value="INR">🇮🇳 Indian Rupees (INR ₹)</option>
-    </select>
-  </div>
-
-  <div class="form-group">
-    <label class="field-label" for="category">Category</label>
-    <!-- Feature 2: default Food & Drinks -->
-    <select id="category">
-      <option value="Food & Drinks" selected>🍜 Food & Drinks</option>
-      <option value="Accommodation">🏨 Accommodation</option>
-      <option value="Transport">🚕 Transport</option>
-      <option value="Activities & Nightlife">🎉 Activities & Nightlife</option>
-      <option value="Shopping">🛍️ Shopping</option>
-      <option value="Flights">✈️ Flights</option>
-      <option value="Health & Essentials">💊 Health & Essentials</option>
-      <option value="Other">📦 Other</option>
-    </select>
-  </div>
-
-  <div class="form-group">
-    <label class="field-label" for="payer">Paid by</label>
-    <!-- Feature 2: restored from localStorage by JS -->
-    <select id="payer">
-      <option>DJ</option><option>Chotu</option><option>Pratik</option>
-    </select>
-  </div>
-
-  <div class="form-group">
-    <label class="field-label">Split between</label>
-    <div class="person-checks">
-      <label class="pcheck-label"><input class="person" type="checkbox" value="DJ"     checked onchange="updateSplitPreview()"> DJ</label>
-      <label class="pcheck-label"><input class="person" type="checkbox" value="Chotu"  checked onchange="updateSplitPreview()"> Chotu</label>
-      <label class="pcheck-label"><input class="person" type="checkbox" value="Pratik" checked onchange="updateSplitPreview()"> Pratik</label>
+    <!-- Admin login -->
+    <div id="adminCard">
+      <h3>🔐 DJ Admin</h3>
+      <div id="adminLoginForm">
+        <div class="form-group">
+          <label class="field-label" for="adminEmail">Email</label>
+          <input id="adminEmail" type="email" placeholder="DJ account email" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="field-label" for="adminPassword">Password</label>
+          <input id="adminPassword" type="password" placeholder="Password" autocomplete="current-password">
+        </div>
+        <button class="btn-primary" onclick="signInDJ()">Sign in as DJ</button>
+      </div>
+      <button class="btn-secondary" onclick="signOutDJ()" id="signOutButton" style="display:none">Sign out</button>
+      <p id="authStatus"></p>
     </div>
   </div>
 
-  <button class="btn-primary" id="add" onclick="addExpense()">＋ Add Shared Expense</button>
+  <footer class="site-footer">
+    Made with <span class="heart">♥</span> &amp; a little ☕ by <strong>DJ</strong>
+  </footer>
 </div>
 
-<!-- EXPENSE HISTORY -->
-<div class="card">
-  <h3>📋 Expense History</h3>
-  <div id="expenses"><div class="empty"><span class="empty-icon">🏖️</span>No expenses yet.</div></div>
+<!-- ══ PANEL: ADD ═════════════════════════ -->
+<div class="tab-panel" id="panel-add" role="tabpanel" aria-labelledby="tab-add">
+  <div class="card">
+    <h3>＋ Add Expense</h3>
+
+    <div class="form-group">
+      <label class="field-label" for="desc">Description</label>
+      <input id="desc" placeholder="Dinner, taxi, hotel…">
+    </div>
+
+    <div class="form-group">
+      <label class="field-label" for="amount">Amount</label>
+      <input id="amount" type="number" min="0.01" step="0.01" placeholder="1200"
+             oninput="updateSplitPreview()" onchange="updateSplitPreview()">
+      <div class="split-preview" id="splitPreview">
+        <div id="spMain"></div>
+        <div class="sp-sub" id="spSub"></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="field-label" for="currency">Currency</label>
+      <select id="currency" onchange="updateSplitPreview()">
+        <option value="THB" selected>🇹🇭 Thai Baht (THB ฿)</option>
+        <option value="INR">🇮🇳 Indian Rupees (INR ₹)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="field-label" for="category">Category</label>
+      <select id="category">
+        <option value="Food & Drinks" selected>🍜 Food & Drinks</option>
+        <option value="Accommodation">🏨 Accommodation</option>
+        <option value="Transport">🚕 Transport</option>
+        <option value="Activities & Nightlife">🎉 Activities & Nightlife</option>
+        <option value="Shopping">🛍️ Shopping</option>
+        <option value="Flights">✈️ Flights</option>
+        <option value="Health & Essentials">💊 Health & Essentials</option>
+        <option value="Other">📦 Other</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="field-label" for="payer">Paid by</label>
+      <select id="payer">
+        <option>DJ</option><option>Chotu</option><option>Pratik</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="field-label">Split between</label>
+      <div class="person-checks">
+        <label class="pcheck-label"><input class="person" type="checkbox" value="DJ"     checked onchange="updateSplitPreview()"> DJ</label>
+        <label class="pcheck-label"><input class="person" type="checkbox" value="Chotu"  checked onchange="updateSplitPreview()"> Chotu</label>
+        <label class="pcheck-label"><input class="person" type="checkbox" value="Pratik" checked onchange="updateSplitPreview()"> Pratik</label>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="add" onclick="addExpense()">＋ Add Shared Expense</button>
+  </div>
 </div>
 
-<!-- CATEGORY BREAKDOWN -->
-<div class="card card-glow-violet">
-  <h3>📊 Spending by Category</h3>
-  <div id="categoryBreakdown"><div class="empty"><span class="empty-icon">📊</span>No data yet.</div></div>
+<!-- ══ PANEL: HISTORY ════════════════════ -->
+<div class="tab-panel" id="panel-history" role="tabpanel" aria-labelledby="tab-history">
+  <div class="card">
+    <h3>📋 Expense History</h3>
+    <div id="expenses"><div class="empty"><span class="empty-icon">🏖️</span>No expenses yet.</div></div>
+  </div>
 </div>
 
-<!-- SETTLEMENT -->
-<div class="card">
-  <h3>⚖️ Settlement</h3>
+<!-- ══ PANEL: SPLIT ══════════════════════ -->
+<div class="tab-panel" id="panel-split" role="tabpanel" aria-labelledby="tab-split">
+  <div class="card card-glow-violet">
+    <h3>📊 Spending by Category</h3>
+    <div id="categoryBreakdown"><div class="empty"><span class="empty-icon">📊</span>No data yet.</div></div>
+  </div>
 
-  <!-- Feature 5: Per-person paid / share / net breakdown -->
-  <div class="section-label">Who paid what</div>
-  <div id="personBreakdown"></div>
-
-  <hr class="section-divider">
-  <div class="section-label">Transfers needed</div>
-  <div id="settlement"></div>
-
-  <!-- Feature 6: Copy summary -->
-  <button class="btn-copy" onclick="copySummary()">📋 Copy Trip Summary</button>
+  <div class="card">
+    <h3>⚖️ Settlement</h3>
+    <div class="section-label">Who paid what</div>
+    <div id="personBreakdown"></div>
+    <hr class="section-divider">
+    <div class="section-label">Transfers needed</div>
+    <div id="settlement"></div>
+    <button class="btn-copy" onclick="copySummary()">📋 Copy Trip Summary</button>
+  </div>
 </div>
 
-<footer class="site-footer">
-  Made with <span class="heart">♥</span> &amp; a little ☕ by <strong>DJ</strong>
-</footer>
+<!-- ══ BOTTOM TAB BAR ════════════════════ -->
+<nav class="tabbar" role="tablist" aria-label="Main navigation">
+  <button id="tab-home" class="tab-btn active" data-tab="home"
+          role="tab" aria-selected="true" aria-controls="panel-home"
+          onclick="switchTab('home')">
+    <span class="tab-icon">🏠</span>
+    <span class="tab-label">Home</span>
+  </button>
+
+  <button id="tab-add" class="tab-btn" data-tab="add"
+          role="tab" aria-selected="false" aria-controls="panel-add"
+          onclick="switchTab('add')">
+    <span class="tab-add-pill"><span class="tab-icon">＋</span></span>
+    <span class="tab-label">Add</span>
+  </button>
+
+  <button id="tab-history" class="tab-btn" data-tab="history"
+          role="tab" aria-selected="false" aria-controls="panel-history"
+          onclick="switchTab('history')">
+    <span class="tab-icon">📋</span>
+    <span class="tab-label">History</span>
+    <span class="tab-badge" id="histBadge" aria-label="expense count"></span>
+  </button>
+
+  <button id="tab-split" class="tab-btn" data-tab="split"
+          role="tab" aria-selected="false" aria-controls="panel-split"
+          onclick="switchTab('split')">
+    <span class="tab-icon">⚖️</span>
+    <span class="tab-label">Split</span>
+  </button>
+</nav>
 
 <script>
 /* ══════════════════════════════════════════
@@ -671,6 +795,50 @@ const CAT_COLOR = {
 function pClass(n){ return n==="DJ"?"dj":n==="Chotu"?"chotu":n==="Pratik"?"pratik":""; }
 
 /* ══════════════════════════════════════════
+   TAB NAVIGATION
+══════════════════════════════════════════ */
+let currentTab = 'home';
+
+function switchTab(name){
+  if(name === currentTab) return;
+  currentTab = name;
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const active = btn.dataset.tab === name;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-selected', String(active));
+  });
+
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.toggle('active', p.id === `panel-${name}`);
+  });
+
+  updateHeaderMini();
+
+  if(name === 'add'){
+    setTimeout(() => { const d = el('desc'); if(d) d.focus(); }, 260);
+  }
+
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+function updateHeaderMini(){
+  const mini = el('headerMini');
+  if(mini) mini.classList.toggle('show', currentTab !== 'home');
+}
+
+function updateBadge(){
+  const badge = el('histBadge');
+  if(!badge) return;
+  if(expenses.length > 0){
+    badge.textContent = expenses.length > 99 ? '99+' : String(expenses.length);
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
+  }
+}
+
+/* ══════════════════════════════════════════
    TOASTS
 ══════════════════════════════════════════ */
 function toast(msg, type="info", ms=3600){
@@ -703,32 +871,25 @@ function countUp(elem, to, dur=900){
 }
 
 /* ══════════════════════════════════════════
-   FEATURE 1 — SPLIT PREVIEW
-   Shows "Each person pays ฿X" live as user types
+   SPLIT PREVIEW
 ══════════════════════════════════════════ */
 function updateSplitPreview(){
   const amtVal  = Number(el("amount").value);
   const cur     = el("currency").value;
   const checked = [...document.querySelectorAll(".person:checked")];
   const preview = el("splitPreview");
-
-  if(!amtVal || amtVal <= 0 || !checked.length){
-    preview.style.display = "none";
-    return;
-  }
-  const amtTHB   = cur==="INR" ? amtVal/2.81 : amtVal;
-  const perHead  = amtTHB / checked.length;
-  const names    = checked.map(c=>c.value);
-
+  if(!amtVal || amtVal <= 0 || !checked.length){ preview.style.display="none"; return; }
+  const amtTHB  = cur==="INR" ? amtVal/2.81 : amtVal;
+  const perHead = amtTHB / checked.length;
+  const names   = checked.map(c=>c.value);
   el("spMain").textContent = `Each pays ${money(perHead)}  (≈ ${moneyINR(perHead)})`;
   el("spSub").textContent  = checked.length < 3
-    ? `${names.join(" & ")} · ${checked.length}-way split`
-    : `3-way equal split`;
+    ? `${names.join(" & ")} · ${checked.length}-way split` : `3-way equal split`;
   preview.style.display = "block";
 }
 
 /* ══════════════════════════════════════════
-   FEATURE 2 — REMEMBER LAST PAYER
+   REMEMBER LAST PAYER
 ══════════════════════════════════════════ */
 function restoreLastPayer(){
   const last = localStorage.getItem("thaiTrip_lastPayer");
@@ -737,7 +898,7 @@ function restoreLastPayer(){
 function saveLastPayer(name){ localStorage.setItem("thaiTrip_lastPayer", name); }
 
 /* ══════════════════════════════════════════
-   FEATURE 3 — TIMESTAMP & DAY HELPERS
+   TIMESTAMP & DAY HELPERS
 ══════════════════════════════════════════ */
 function relativeTime(iso){
   const diff = Date.now() - new Date(iso).getTime();
@@ -751,11 +912,9 @@ function relativeTime(iso){
   if(d < 7)   return `${d}d ago`;
   return new Date(iso).toLocaleDateString("en-IN",{day:"numeric",month:"short"});
 }
-
 function dayKey(iso){
-  const d     = new Date(iso);
-  const today = new Date();
-  const yest  = new Date(); yest.setDate(today.getDate()-1);
+  const d = new Date(iso); const today = new Date();
+  const yest = new Date(); yest.setDate(today.getDate()-1);
   if(d.toDateString()===today.toDateString()) return "Today";
   if(d.toDateString()===yest.toDateString())  return "Yesterday";
   return d.toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"});
@@ -773,7 +932,6 @@ async function refreshAuth(){
   el("authStatus").style.color = isDJ ? "#34d399" : "var(--muted2)";
   render();
 }
-
 async function signInDJ(){
   const email    = el("adminEmail").value.trim();
   const password = el("adminPassword").value;
@@ -788,7 +946,6 @@ async function signInDJ(){
   toast("Welcome back, DJ! 🎉","success");
   await refreshAuth();
 }
-
 async function signOutDJ(){
   await db.auth.signOut();
   toast("Signed out.","info");
@@ -812,50 +969,49 @@ async function loadExpenses(){
 ══════════════════════════════════════════ */
 function render(){
   const total = expenses.reduce((s,e)=>s+Number(e.amount),0);
+
   countUp(el("total"), total);
   el("rateDisplay").textContent = "2.81";
   el("inr").textContent = "₹"+Math.round(total*2.81).toLocaleString("en-IN")+" estimated";
   el("entryCount").textContent = expenses.length;
 
-  /* ── Feature 4: Live tiles ── */
-  // Today's spend
-  const todayStr  = new Date().toDateString();
-  const todayAmt  = expenses
-    .filter(e => new Date(e.created_at).toDateString()===todayStr)
+  /* Tab nav updates */
+  if(el("headerMiniVal")) el("headerMiniVal").textContent = money(total);
+  updateBadge();
+  updateHeaderMini();
+
+  /* Live tiles */
+  const todayStr = new Date().toDateString();
+  const todayAmt = expenses
+    .filter(e=>new Date(e.created_at).toDateString()===todayStr)
     .reduce((s,e)=>s+Number(e.amount),0);
   el("tileToday").textContent = todayAmt > 0 ? money(todayAmt) : "No spend today";
 
-  // Top payer (by total THB paid)
   const paid = Object.fromEntries(friends.map(f=>[f,0]));
   expenses.forEach(e=>{ if(e.paid_by in paid) paid[e.paid_by]+=Number(e.amount); });
-  const topPayerName = friends.reduce((a,b)=>paid[a]>=paid[b]?a:b);
-  el("tileTopPayer").textContent = paid[topPayerName]>0
-    ? `${topPayerName} · ${money(paid[topPayerName])}` : "—";
+  const topPayer = friends.reduce((a,b)=>paid[a]>=paid[b]?a:b);
+  el("tileTopPayer").textContent = paid[topPayer]>0 ? `${topPayer} · ${money(paid[topPayer])}` : "—";
 
-  // Biggest category
   const cats = {};
   expenses.forEach(e=>{ const k=e.category||"Other"; cats[k]=(cats[k]||0)+Number(e.amount); });
   const bigCat = Object.entries(cats).sort((a,b)=>b[1]-a[1])[0];
-  el("tileBigCat").textContent = bigCat
-    ? `${CAT_ICON[bigCat[0]]||"📦"} ${bigCat[0]}` : "—";
+  el("tileBigCat").textContent = bigCat ? `${CAT_ICON[bigCat[0]]||"📦"} ${bigCat[0]}` : "—";
 
-  /* ── Category breakdown ── */
+  /* Category breakdown */
   renderCategories(total);
 
-  /* ── Expense list (grouped by day, Feature 3) ── */
+  /* Expense list — day grouped */
   if(!expenses.length){
-    el("expenses").innerHTML = `<div class="empty"><span class="empty-icon">🏖️</span>No expenses yet. Start adding!</div>`;
+    el("expenses").innerHTML = `<div class="empty"><span class="empty-icon">🏖️</span>No expenses yet. Tap ＋ to add!</div>`;
   } else {
-    // Group by calendar day
     const groups = new Map();
     expenses.forEach(e=>{
       const key = dayKey(e.created_at);
       if(!groups.has(key)) groups.set(key,[]);
       groups.get(key).push(e);
     });
-
     let html = ""; let idx = 0;
-    groups.forEach((items, day)=>{
+    groups.forEach((items,day)=>{
       html += `<div class="day-header">${safe(day)}</div>`;
       items.forEach(e=>{
         const cat      = e.category||"Other";
@@ -864,8 +1020,7 @@ function render(){
         const pCls     = pClass(e.paid_by);
         const split    = Array.isArray(e.split_between)?e.split_between:[];
         const delBtn   = isDJ
-          ? `<button class="btn-del" onclick="deleteExpense(${Number(e.id)})">✕ Delete</button>`
-          : "";
+          ? `<button class="btn-del" onclick="deleteExpense(${Number(e.id)})">✕ Delete</button>` : "";
         let amtLine, subLine;
         if(e.currency==="INR" && e.original_amount!=null){
           amtLine = `₹${Number(e.original_amount).toLocaleString("en-IN",{maximumFractionDigits:2})}`;
@@ -874,9 +1029,7 @@ function render(){
           amtLine = money(Number(e.amount));
           subLine = `≈ ${moneyINR(Number(e.amount))}`;
         }
-        // Feature 3: timestamp
         const ts = e.created_at ? relativeTime(e.created_at) : "";
-
         html += `<div class="exp-item" style="animation-delay:${idx*.04}s">
           <div class="exp-left">
             <div class="cat-bar" style="background:${catColor}"></div>
@@ -902,7 +1055,7 @@ function render(){
     el("expenses").innerHTML = html;
   }
 
-  /* ── Balance (shared across settlement sections) ── */
+  /* Balances */
   const bal = Object.fromEntries(friends.map(f=>[f,0]));
   expenses.forEach(e=>{
     const amount = Number(e.amount);
@@ -912,10 +1065,9 @@ function render(){
     people.forEach(p=>{ if(p in bal) bal[p]-=amount/people.length; });
   });
 
-  /* ── Feature 5: Per-person breakdown ── */
   renderPersonBreakdown(bal);
 
-  /* ── Settlement transfers ── */
+  /* Settlement transfers */
   let creditors = friends.map(p=>({name:p,amount:bal[p]})).filter(x=>x.amount>0.01);
   let debtors   = friends.map(p=>({name:p,amount:-bal[p]})).filter(x=>x.amount>0.01);
   const transfers = [];
@@ -923,10 +1075,7 @@ function render(){
     if(d.amount<=0.01) continue;
     for(const c of creditors){
       const n = Math.min(d.amount,c.amount);
-      if(n>0.01){
-        transfers.push({from:d.name,to:c.name,amount:n});
-        d.amount-=n; c.amount-=n;
-      }
+      if(n>0.01){ transfers.push({from:d.name,to:c.name,amount:n}); d.amount-=n; c.amount-=n; }
     }
   }
 
@@ -955,8 +1104,7 @@ function render(){
 }
 
 /* ══════════════════════════════════════════
-   FEATURE 5 — PER-PERSON BREAKDOWN
-   Shows: Paid | Fair Share | Net for each person
+   PER-PERSON BREAKDOWN
 ══════════════════════════════════════════ */
 function renderPersonBreakdown(bal){
   if(!expenses.length){
@@ -972,29 +1120,17 @@ function renderPersonBreakdown(bal){
     if(e.paid_by in totalPaid) totalPaid[e.paid_by]+=amount;
     people.forEach(p=>{ if(p in totalShare) totalShare[p]+=amount/people.length; });
   });
-
   el("personBreakdown").innerHTML = friends.map(p=>{
-    const cls  = pClass(p);
-    const net  = bal[p];
-    const pos  = net >= 0;
+    const cls = pClass(p); const net = bal[p]; const pos = net >= 0;
     return `<div class="person-bkd">
       <div class="bkd-left">
         <div class="avatar av-sm av-${cls}">${safe(p.slice(0,2).toUpperCase())}</div>
         <span class="bkd-name">${safe(p)}</span>
       </div>
       <div class="bkd-stats">
-        <div class="bkd-col">
-          <span class="bkd-label">Paid</span>
-          <span class="bkd-val">${money(totalPaid[p])}</span>
-        </div>
-        <div class="bkd-col">
-          <span class="bkd-label">Share</span>
-          <span class="bkd-val">${money(totalShare[p])}</span>
-        </div>
-        <div class="bkd-col">
-          <span class="bkd-label">Net</span>
-          <span class="bkd-val ${pos?"bal-pos":"bal-neg"}">${pos?"+":"−"}${money(Math.abs(net))}</span>
-        </div>
+        <div class="bkd-col"><span class="bkd-label">Paid</span><span class="bkd-val">${money(totalPaid[p])}</span></div>
+        <div class="bkd-col"><span class="bkd-label">Share</span><span class="bkd-val">${money(totalShare[p])}</span></div>
+        <div class="bkd-col"><span class="bkd-label">Net</span><span class="bkd-val ${pos?"bal-pos":"bal-neg"}">${pos?"+":"−"}${money(Math.abs(net))}</span></div>
       </div>
     </div>`;
   }).join("");
@@ -1018,9 +1154,7 @@ function renderCategories(total){
     return `<div class="cat-row">
       <span class="cat-emoji">${safe(icon)}</span>
       <span class="cat-name">${safe(cat)}</span>
-      <div class="cat-track">
-        <div class="cat-fill" style="width:${pct}%;background:linear-gradient(90deg,${color}88,${color})"></div>
-      </div>
+      <div class="cat-track"><div class="cat-fill" style="width:${pct}%;background:linear-gradient(90deg,${color}88,${color})"></div></div>
       <span class="cat-pct">${pct}%</span>
       <span class="cat-amt">${money(amt)}</span>
     </div>`;
@@ -1032,14 +1166,14 @@ function renderCategories(total){
 ══════════════════════════════════════════ */
 async function addExpense(){
   if(busy) return;
-  const description    = el("desc").value.trim();
-  const amount         = Number(el("amount").value);
-  const paid_by        = el("payer").value;
-  const category       = el("category").value;
-  const currency       = el("currency").value;
+  const description     = el("desc").value.trim();
+  const amount          = Number(el("amount").value);
+  const paid_by         = el("payer").value;
+  const category        = el("category").value;
+  const currency        = el("currency").value;
   const original_amount = amount;
-  const amount_thb     = currency==="INR" ? amount/2.81 : amount;
-  const split_between  = [...document.querySelectorAll(".person:checked")].map(x=>x.value);
+  const amount_thb      = currency==="INR" ? amount/2.81 : amount;
+  const split_between   = [...document.querySelectorAll(".person:checked")].map(x=>x.value);
 
   if(!description || !Number.isFinite(amount) || amount<=0 || !split_between.length){
     toast("Enter a description, a valid amount, and at least one person.","error");
@@ -1056,17 +1190,17 @@ async function addExpense(){
 
   if(error){ toast("Could not save: "+error.message,"error"); return; }
 
-  // Feature 2: save last payer
   saveLastPayer(paid_by);
-
   toast(`${CAT_ICON[category]||"📦"} ${category} added ✓`,"success");
-  el("desc").value="";
-  el("amount").value="";
-  el("splitPreview").style.display="none";   // hide preview after add
-  el("currency").value="THB";
-  el("category").value="Food & Drinks";      // reset to smart default
-  // payer stays as last payer — intentional
+
+  el("desc").value=""; el("amount").value="";
+  el("splitPreview").style.display="none";
+  el("currency").value="THB"; el("category").value="Food & Drinks";
+
   await loadExpenses();
+
+  /* Switch to History so the user sees their new entry immediately */
+  switchTab('history');
 }
 
 /* ══════════════════════════════════════════
@@ -1082,15 +1216,11 @@ async function deleteExpense(id){
 }
 
 /* ══════════════════════════════════════════
-   FEATURE 6 — COPY TRIP SUMMARY
-   Builds a clean text summary and copies to clipboard
+   COPY TRIP SUMMARY
 ══════════════════════════════════════════ */
 async function copySummary(){
   if(!expenses.length){ toast("No expenses to summarise yet.","info"); return; }
-
   const total = expenses.reduce((s,e)=>s+Number(e.amount),0);
-
-  // Recompute balances
   const bal  = Object.fromEntries(friends.map(f=>[f,0]));
   const paid = Object.fromEntries(friends.map(f=>[f,0]));
   const share= Object.fromEntries(friends.map(f=>[f,0]));
@@ -1103,8 +1233,6 @@ async function copySummary(){
     bal[e.paid_by]+=amount;
     people.forEach(p=>{ if(p in bal) bal[p]-=amount/people.length; });
   });
-
-  // Transfers
   let creditors = friends.map(p=>({name:p,amount:bal[p]})).filter(x=>x.amount>0.01);
   let debtors   = friends.map(p=>({name:p,amount:-bal[p]})).filter(x=>x.amount>0.01);
   const transfers = [];
@@ -1115,52 +1243,33 @@ async function copySummary(){
       if(n>0.01){ transfers.push({from:d.name,to:c.name,amount:n}); d.amount-=n; c.amount-=n; }
     }
   }
-
-  // Category totals
   const cats={};
   expenses.forEach(e=>{ const k=e.category||"Other"; cats[k]=(cats[k]||0)+Number(e.amount); });
   const sortedCats = Object.entries(cats).sort((a,b)=>b[1]-a[1]);
-
-  const now  = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
-  const fmt  = n => `฿${Number(n).toLocaleString("en-US",{maximumFractionDigits:0})}`;
+  const now    = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+  const fmt    = n => `฿${Number(n).toLocaleString("en-US",{maximumFractionDigits:0})}`;
   const fmtINR = n => `₹${Math.round(n*2.81).toLocaleString("en-IN")}`;
-
-  let txt = `🇹🇭 ThaiTrip Split — Summary\n`;
-  txt    += `Generated: ${now}\n`;
-  txt    += `${"─".repeat(36)}\n\n`;
-
-  txt    += `💰 TOTAL SPENT\n`;
-  txt    += `   ${fmt(total)}  (≈ ${fmtINR(total)})\n\n`;
-
-  txt    += `👤 WHO PAID WHAT\n`;
+  let txt  = `🇹🇭 ThaiTrip Split — Summary\nGenerated: ${now}\n${"─".repeat(36)}\n\n`;
+  txt     += `💰 TOTAL SPENT\n   ${fmt(total)}  (≈ ${fmtINR(total)})\n\n`;
+  txt     += `👤 WHO PAID WHAT\n`;
   friends.forEach(p=>{
     const net = bal[p];
-    const tag = net>=0.01 ? `gets back ${fmt(net)}` : net<=-0.01 ? `owes ${fmt(-net)}` : "settled";
+    const tag = net>=0.01?`gets back ${fmt(net)}`:net<=-0.01?`owes ${fmt(-net)}`:"settled";
     txt += `   ${p.padEnd(8)} Paid ${fmt(paid[p])}   Share ${fmt(share[p])}   → ${tag}\n`;
   });
-
-  txt    += `\n💸 TRANSFERS\n`;
-  if(transfers.length){
-    transfers.forEach(t=>{ txt+=`   ${t.from} → ${t.to}   ${fmt(t.amount)}  (≈ ${fmtINR(t.amount)})\n`; });
-  } else {
-    txt += `   Everyone is settled up!\n`;
-  }
-
-  txt    += `\n📊 BY CATEGORY\n`;
+  txt += `\n💸 TRANSFERS\n`;
+  if(transfers.length) transfers.forEach(t=>{ txt+=`   ${t.from} → ${t.to}   ${fmt(t.amount)}  (≈ ${fmtINR(t.amount)})\n`; });
+  else txt += `   Everyone is settled up!\n`;
+  txt += `\n📊 BY CATEGORY\n`;
   sortedCats.forEach(([cat,amt])=>{
     const pct = Math.round(amt/total*100);
-    const icon = CAT_ICON[cat]||"📦";
-    txt += `   ${icon} ${cat.padEnd(26)} ${fmt(amt).padStart(9)}  ${pct}%\n`;
+    txt += `   ${CAT_ICON[cat]||"📦"} ${cat.padEnd(26)} ${fmt(amt).padStart(9)}  ${pct}%\n`;
   });
-
-  txt    += `\n${"─".repeat(36)}\n`;
-  txt    += `ThaiTrip Split · Made by DJ\n`;
-
+  txt += `\n${"─".repeat(36)}\nThaiTrip Split · Made by DJ\n`;
   try {
     await navigator.clipboard.writeText(txt);
-    toast("Trip summary copied to clipboard! 📋","success",4000);
+    toast("Trip summary copied! 📋","success",4000);
   } catch(err){
-    // Fallback: show in prompt so user can manually copy
     prompt("Copy this summary:", txt);
   }
 }
@@ -1174,7 +1283,6 @@ db.channel("shared-expenses")
 
 db.auth.onAuthStateChange(()=>{ setTimeout(refreshAuth,0); });
 
-// Feature 2: restore last payer before first render
 restoreLastPayer();
 refreshAuth();
 loadExpenses();
