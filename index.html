@@ -526,6 +526,66 @@ button {
 @keyframes toastOut   { from{opacity:1;transform:translateX(0) scale(1)} to{opacity:0;transform:translateX(18px) scale(.95)} }
 
 /* ══════════════════════════════════════════
+   MINE TAB — amber glow card variant
+══════════════════════════════════════════ */
+.card-glow-amber {
+  border-color:transparent;
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.055),rgba(255,255,255,.015)) padding-box,
+    linear-gradient(135deg,rgba(251,191,36,.32),rgba(251,113,133,.18),rgba(251,191,36,.1)) border-box;
+  box-shadow:var(--sh),0 0 50px rgba(251,191,36,.05),inset 0 1px 0 rgba(251,191,36,.07);
+}
+
+/* Person selector chips */
+.person-selector { display:flex; gap:9px; flex-wrap:wrap; margin-bottom:20px; }
+.psel-btn {
+  display:inline-flex; align-items:center; gap:7px;
+  padding:7px 14px 7px 7px; border-radius:99px;
+  border:1px solid var(--border); background:rgba(255,255,255,.03);
+  cursor:pointer; font-size:13px; font-weight:700; color:var(--muted2);
+  min-height:0; width:auto;
+  transition:background .2s,border-color .2s,color .2s,transform .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.psel-btn:active { transform:scale(.92); }
+.psel-btn[data-person="DJ"][data-active="true"]     { background:rgba(34,211,238,.12);  border-color:rgba(34,211,238,.4);  color:var(--dj); }
+.psel-btn[data-person="Chotu"][data-active="true"]  { background:rgba(167,139,250,.12); border-color:rgba(167,139,250,.4); color:var(--chotu); }
+.psel-btn[data-person="Pratik"][data-active="true"] { background:rgba(251,191,36,.12);  border-color:rgba(251,191,36,.4);  color:var(--pratik); }
+
+/* Hero stat (amber flavour) */
+.mine-hero { text-align:center; padding:4px 0 20px; border-bottom:1px solid rgba(255,255,255,.07); margin-bottom:16px; }
+.mine-eyebrow { font-size:10.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.mine-total {
+  font-size:clamp(40px,10vw,58px); font-weight:900; letter-spacing:-2.5px; line-height:1;
+  margin-bottom:4px;
+  background:linear-gradient(130deg,#fff 15%,var(--amber) 70%);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  animation:amberPulse 5s ease-in-out infinite;
+}
+@keyframes amberPulse {
+  0%,100% { filter:drop-shadow(0 0 14px rgba(251,191,36,.28)); }
+  50%      { filter:drop-shadow(0 0 30px rgba(251,191,36,.5)); }
+}
+.mine-total-sub { font-size:14px; font-weight:600; color:var(--muted2); }
+
+/* 3 quick-stat chips under the hero number */
+.mine-meta-row { display:flex; justify-content:center; gap:8px; margin-top:16px; flex-wrap:wrap; }
+.mine-stat {
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:10px 16px; border-radius:var(--r-sm);
+  background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
+  min-width:80px;
+}
+.mine-stat-label { font-size:9.5px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:var(--muted); }
+.mine-stat-val   { font-size:14px; font-weight:800; color:var(--text); overflow-wrap:anywhere; text-align:center; }
+
+/* Mine category & expense rows reuse existing .cat-row / .exp-item classes */
+/* Only override is the amount color — inline style handles that */
+
+/* Mine share note below amount */
+.mine-share-note { font-size:10px; color:var(--muted); margin-top:2px; }
+
+/* ══════════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════════ */
 @media (max-width:520px) {
@@ -710,6 +770,58 @@ button {
   </div>
 </div>
 
+<!-- ══ PANEL: MINE ══════════════════════ -->
+<div class="tab-panel" id="panel-mine" role="tabpanel" aria-labelledby="tab-mine">
+
+  <div class="card card-glow-amber">
+    <h3>📈 My Expense Analysis</h3>
+
+    <!-- Person selector -->
+    <div class="person-selector">
+      <button class="psel-btn" data-person="DJ"     data-active="true"  onclick="selectPerson('DJ')">
+        <div class="avatar av-sm av-dj">DJ</div>DJ
+      </button>
+      <button class="psel-btn" data-person="Chotu"  data-active="false" onclick="selectPerson('Chotu')">
+        <div class="avatar av-sm av-chotu">CH</div>Chotu
+      </button>
+      <button class="psel-btn" data-person="Pratik" data-active="false" onclick="selectPerson('Pratik')">
+        <div class="avatar av-sm av-pratik">PR</div>Pratik
+      </button>
+    </div>
+
+    <!-- Hero total (INR primary) -->
+    <div class="mine-hero">
+      <div class="mine-eyebrow">Personal share of trip expenses</div>
+      <div class="mine-total"  id="mineTotal">₹0</div>
+      <div class="mine-total-sub" id="mineTotalSub">฿0</div>
+      <div class="mine-meta-row">
+        <div class="mine-stat">
+          <span class="mine-stat-label">Transactions</span>
+          <span class="mine-stat-val" id="mineExpCount">0</span>
+        </div>
+        <div class="mine-stat">
+          <span class="mine-stat-label">You Fronted</span>
+          <span class="mine-stat-val" id="mineFronted">₹0</span>
+        </div>
+        <div class="mine-stat">
+          <span class="mine-stat-label">Top Category</span>
+          <span class="mine-stat-val" id="mineTopCat">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Spending by Category</h3>
+    <div id="mineCats"><div class="empty"><span class="empty-icon">📊</span>No data yet.</div></div>
+  </div>
+
+  <div class="card">
+    <h3>My Transactions</h3>
+    <div id="mineExpenses"><div class="empty"><span class="empty-icon">🧾</span>No expenses yet.</div></div>
+  </div>
+</div>
+
 <!-- ══ PANEL: SPLIT ══════════════════════ -->
 <div class="tab-panel" id="panel-split" role="tabpanel" aria-labelledby="tab-split">
   <div class="card card-glow-violet">
@@ -750,6 +862,13 @@ button {
     <span class="tab-icon">📋</span>
     <span class="tab-label">History</span>
     <span class="tab-badge" id="histBadge" aria-label="expense count"></span>
+  </button>
+
+  <button id="tab-mine" class="tab-btn" data-tab="mine"
+          role="tab" aria-selected="false" aria-controls="panel-mine"
+          onclick="switchTab('mine')">
+    <span class="tab-icon">📈</span>
+    <span class="tab-label">Mine</span>
   </button>
 
   <button id="tab-split" class="tab-btn" data-tab="split"
@@ -815,6 +934,7 @@ function switchTab(name){
 
   updateHeaderMini();
 
+  if(name === 'mine')  renderPersonalTab();
   if(name === 'add'){
     setTimeout(() => { const d = el('desc'); if(d) d.focus(); }, 260);
   }
@@ -979,6 +1099,7 @@ function render(){
   if(el("headerMiniVal")) el("headerMiniVal").textContent = money(total);
   updateBadge();
   updateHeaderMini();
+  if(currentTab === 'mine') renderPersonalTab();
 
   /* Live tiles */
   const todayStr = new Date().toDateString();
@@ -1275,6 +1396,158 @@ async function copySummary(){
 }
 
 /* ══════════════════════════════════════════
+   MINE TAB — Personal expense analysis
+   "Personal spend" = fair share of each expense
+   the person was part of, displayed INR-primary.
+══════════════════════════════════════════ */
+let selectedPerson = (() => {
+  const saved = localStorage.getItem("thaiTrip_selectedPerson");
+  return saved && friends.includes(saved) ? saved : friends[0];
+})();
+
+function selectPerson(name){
+  selectedPerson = name;
+  localStorage.setItem("thaiTrip_selectedPerson", name);
+  renderPersonalTab();
+}
+
+function getPersonalData(person){
+  // All expenses this person was part of (in split_between)
+  const myExpenses = expenses.filter(e =>
+    Array.isArray(e.split_between) && e.split_between.includes(person)
+  );
+
+  // Annotate each expense with this person's exact share (THB)
+  const myData = myExpenses.map(e => {
+    const count = Array.isArray(e.split_between) ? e.split_between.length : 1;
+    return { ...e, myShare: Number(e.amount) / count };
+  });
+
+  // Category totals (THB) for this person
+  const catTotals = {};
+  myData.forEach(e => {
+    const cat = e.category || "Other";
+    catTotals[cat] = (catTotals[cat] || 0) + e.myShare;
+  });
+
+  // Total personal spend (THB)
+  const myTotal = myData.reduce((s, e) => s + e.myShare, 0);
+
+  // Total they physically fronted across all expenses they paid
+  const myFronted = expenses
+    .filter(e => e.paid_by === person)
+    .reduce((s, e) => s + Number(e.amount), 0);
+
+  return { myData, catTotals, myTotal, myFronted };
+}
+
+function renderPersonalTab(){
+  const person = selectedPerson;
+
+  // Sync selector chips
+  document.querySelectorAll('.psel-btn').forEach(btn => {
+    btn.dataset.active = String(btn.dataset.person === person);
+  });
+
+  if(!expenses.length){
+    el("mineTotal").textContent    = "₹0";
+    el("mineTotalSub").textContent = "฿0";
+    el("mineExpCount").textContent = "0";
+    el("mineFronted").textContent  = "₹0";
+    el("mineTopCat").textContent   = "—";
+    el("mineCats").innerHTML     = `<div class="empty"><span class="empty-icon">📊</span>No data yet.</div>`;
+    el("mineExpenses").innerHTML = `<div class="empty"><span class="empty-icon">🧾</span>No expenses yet.</div>`;
+    return;
+  }
+
+  const { myData, catTotals, myTotal, myFronted } = getPersonalData(person);
+  const sortedCats = Object.entries(catTotals).sort((a,b) => b[1]-a[1]);
+
+  /* ── Hero numbers (INR primary) ── */
+  el("mineTotal").textContent    = "₹" + Math.round(myTotal*2.81).toLocaleString("en-IN");
+  el("mineTotalSub").textContent = money(myTotal);
+  el("mineExpCount").textContent = myData.length;
+  el("mineFronted").textContent  = "₹" + Math.round(myFronted*2.81).toLocaleString("en-IN");
+  el("mineTopCat").textContent   = sortedCats.length
+    ? `${CAT_ICON[sortedCats[0][0]]||"📦"} ${sortedCats[0][0]}`
+    : "—";
+
+  /* ── Category breakdown (INR primary) ── */
+  if(!sortedCats.length){
+    el("mineCats").innerHTML = `<div class="empty" style="padding:14px">No data for ${safe(person)}.</div>`;
+  } else {
+    el("mineCats").innerHTML = sortedCats.map(([cat,amt])=>{
+      const pct   = myTotal>0 ? Math.round(amt/myTotal*100) : 0;
+      const inr   = Math.round(amt*2.81);
+      const icon  = CAT_ICON[cat]  || "📦";
+      const color = CAT_COLOR[cat] || "#64748b";
+      return `<div class="cat-row">
+        <span class="cat-emoji">${safe(icon)}</span>
+        <span class="cat-name">${safe(cat)}</span>
+        <div class="cat-track"><div class="cat-fill" style="width:${pct}%;background:linear-gradient(90deg,${color}88,${color})"></div></div>
+        <span class="cat-pct">${pct}%</span>
+        <span class="cat-amt">₹${inr.toLocaleString("en-IN")}</span>
+      </div>`;
+    }).join("");
+  }
+
+  /* ── Personal transaction list (INR primary, day-grouped) ── */
+  if(!myData.length){
+    el("mineExpenses").innerHTML = `<div class="empty"><span class="empty-icon">🧾</span>${safe(person)} has no expenses yet.</div>`;
+    return;
+  }
+
+  const groups = new Map();
+  myData.forEach(e => {
+    const key = dayKey(e.created_at);
+    if(!groups.has(key)) groups.set(key,[]);
+    groups.get(key).push(e);
+  });
+
+  let html = ""; let idx = 0;
+  groups.forEach((items, day) => {
+    html += `<div class="day-header">${safe(day)}</div>`;
+    items.forEach(e => {
+      const cat      = e.category || "Other";
+      const catColor = CAT_COLOR[cat] || "#64748b";
+      const catIcon  = CAT_ICON[cat]  || "📦";
+      const pCls     = pClass(e.paid_by);
+      const iMePaid  = e.paid_by === person;
+      const shareINR = Math.round(e.myShare * 2.81);
+      const totalINR = Math.round(Number(e.amount) * 2.81);
+      const splitCount = Array.isArray(e.split_between) ? e.split_between.length : 1;
+      const ts = e.created_at ? relativeTime(e.created_at) : "";
+
+      html += `<div class="exp-item" style="animation-delay:${idx*.04}s">
+        <div class="exp-left">
+          <div class="cat-bar" style="background:${catColor}"></div>
+          <span class="exp-icon">${catIcon}</span>
+        </div>
+        <div class="exp-body">
+          <div class="exp-desc">${safe(e.description)}</div>
+          <div class="exp-meta">
+            ${iMePaid
+              ? `<span class="mbadge mbadge-${pCls}">You paid</span>`
+              : `<span class="mbadge mbadge-${pClass(e.paid_by)}">${safe(e.paid_by)} paid</span>`}
+            ${splitCount > 1 ? `<span class="mbadge">${splitCount}-way split</span>` : ""}
+          </div>
+          ${ts ? `<div class="exp-time">${safe(ts)}</div>` : ""}
+        </div>
+        <div class="exp-right">
+          <div class="exp-amount" style="color:var(--amber)">₹${shareINR.toLocaleString("en-IN")}</div>
+          <div class="exp-amount-sub">${money(e.myShare)}</div>
+          ${iMePaid && splitCount > 1
+            ? `<div class="mine-share-note">Total bill: ₹${totalINR.toLocaleString("en-IN")}</div>`
+            : ""}
+        </div>
+      </div>`;
+      idx++;
+    });
+  });
+  el("mineExpenses").innerHTML = html;
+}
+
+/* ══════════════════════════════════════════
    REALTIME + BOOT
 ══════════════════════════════════════════ */
 db.channel("shared-expenses")
@@ -1286,6 +1559,11 @@ db.auth.onAuthStateChange(()=>{ setTimeout(refreshAuth,0); });
 restoreLastPayer();
 refreshAuth();
 loadExpenses();
+
+// Sync Mine tab selector to persisted selection on first load
+document.querySelectorAll('.psel-btn').forEach(btn => {
+  btn.dataset.active = String(btn.dataset.person === selectedPerson);
+});
 </script>
 </body>
 </html>
