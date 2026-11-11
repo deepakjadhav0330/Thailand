@@ -537,20 +537,51 @@ button {
 }
 
 /* Person selector chips */
-.person-selector { display:flex; gap:9px; flex-wrap:wrap; margin-bottom:20px; }
+.person-selector { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; align-items:center; }
 .psel-btn {
   display:inline-flex; align-items:center; gap:7px;
-  padding:7px 14px 7px 7px; border-radius:99px;
-  border:1px solid var(--border); background:rgba(255,255,255,.03);
-  cursor:pointer; font-size:13px; font-weight:700; color:var(--muted2);
+  border-radius:99px; border:1px solid var(--border);
+  background:rgba(255,255,255,.03);
+  cursor:pointer; font-weight:700; color:var(--muted2);
   min-height:0; width:auto;
-  transition:background .2s,border-color .2s,color .2s,transform .15s;
   -webkit-tap-highlight-color:transparent;
+  /* transition every size-related prop so the switch animates smoothly */
+  transition: background .22s, border-color .22s, color .22s, opacity .22s,
+              padding .22s, font-size .22s, box-shadow .22s, transform .15s;
 }
-.psel-btn:active { transform:scale(.92); }
-.psel-btn[data-person="DJ"][data-active="true"]     { background:rgba(34,211,238,.12);  border-color:rgba(34,211,238,.4);  color:var(--dj); }
-.psel-btn[data-person="Chotu"][data-active="true"]  { background:rgba(167,139,250,.12); border-color:rgba(167,139,250,.4); color:var(--chotu); }
-.psel-btn[data-person="Pratik"][data-active="true"] { background:rgba(251,191,36,.12);  border-color:rgba(251,191,36,.4);  color:var(--pratik); }
+.psel-btn:active { transform:scale(.88); }
+
+/* ── ACTIVE: big, bold, glowing ── */
+.psel-btn[data-active="true"] {
+  padding: 10px 22px 10px 10px;
+  font-size: 16px;
+}
+.psel-btn[data-active="true"] .avatar {
+  width: 38px !important; height: 38px !important; font-size: 13px !important;
+}
+.psel-btn[data-person="DJ"][data-active="true"]     {
+  background:rgba(34,211,238,.14);  border-color:rgba(34,211,238,.5);  color:var(--dj);
+  box-shadow: 0 4px 18px rgba(34,211,238,.22);
+}
+.psel-btn[data-person="Chotu"][data-active="true"]  {
+  background:rgba(167,139,250,.14); border-color:rgba(167,139,250,.5); color:var(--chotu);
+  box-shadow: 0 4px 18px rgba(167,139,250,.22);
+}
+.psel-btn[data-person="Pratik"][data-active="true"] {
+  background:rgba(251,191,36,.14);  border-color:rgba(251,191,36,.5);  color:var(--pratik);
+  box-shadow: 0 4px 18px rgba(251,191,36,.22);
+}
+
+/* ── INACTIVE: small, muted ── */
+.psel-btn[data-active="false"] {
+  padding: 6px 12px 6px 7px;
+  font-size: 12px;
+  opacity: 0.45;
+  gap: 5px;
+}
+.psel-btn[data-active="false"] .avatar {
+  width: 22px !important; height: 22px !important; font-size: 8px !important;
+}
 
 /* Hero stat (amber flavour) */
 .mine-hero { text-align:center; padding:4px 0 20px; border-bottom:1px solid rgba(255,255,255,.07); margin-bottom:16px; }
@@ -1471,6 +1502,9 @@ function renderPersonalTab(){
   el("mineTopCat").textContent   = sortedCats.length
     ? `${CAT_ICON[sortedCats[0][0]]||"📦"} ${sortedCats[0][0]}`
     : "—";
+  // Update eyebrow to show whose data this is
+  const eyebrow = document.querySelector(".mine-eyebrow");
+  if(eyebrow) eyebrow.textContent = `${person}'s share of trip expenses`;
 
   /* ── Category breakdown (INR primary) ── */
   if(!sortedCats.length){
